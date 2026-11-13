@@ -2212,8 +2212,13 @@ fn test_apply_sync_result_with_hosts_returns_total() {
 #[test]
 fn test_apply_sync_result_write_failure_preserves_total() {
     let mut app = make_provider_app();
-    // Point config to a non-writable path so write() fails
-    app.hosts_state.ssh_config.path = PathBuf::from("/dev/null/impossible");
+    // Point config to a non-writable path so write() fails: a "directory"
+    // that is really a regular file. (`/dev/null/...` would be writable on
+    // Windows, where it is just C:\dev\null\....)
+    let dir = tempfile::tempdir().expect("tempdir");
+    let not_a_dir = dir.path().join("file");
+    std::fs::write(&not_a_dir, b"").expect("write file");
+    app.hosts_state.ssh_config.path = not_a_dir.join("impossible");
     let hosts = vec![
         crate::providers::ProviderHost::new(
             "s1".to_string(),

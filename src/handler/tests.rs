@@ -3634,7 +3634,6 @@ fn test_snippet_picker_d_last_item_selects_none() {
 }
 
 #[test]
-#[cfg_attr(windows, ignore = "relies on Unix permissions to force a save failure")]
 fn test_snippet_picker_d_rollback_on_save_failure() {
     // Skip under root (e.g. inside CI Docker containers): root can
     // mkdir -p any path including /nonexistent/dir, so the save would
@@ -3655,7 +3654,12 @@ fn test_snippet_picker_d_rollback_on_save_failure() {
 
     let mut app = make_snippet_app();
     // Point to a non-writable path to force save failure
-    app.snippets.store_mut().path_override = Some(PathBuf::from("/nonexistent/dir/snippets"));
+    // Unwritable on every OS: a "directory" that is really a regular file.
+    // (`/nonexistent/...` is creatable on Windows, as C:\nonexistent\....)
+    let blocker = tempfile::tempdir().expect("tempdir");
+    std::fs::write(blocker.path().join("file"), b"").expect("write file");
+    app.snippets.store_mut().path_override =
+        Some(blocker.path().join("file").join("dir").join("snippets"));
     let (tx, _rx) = mpsc::channel();
 
     let _ = handle_key_event(&mut app, key(KeyCode::Char('d')), &tx);
@@ -3921,7 +3925,6 @@ fn test_snippet_form_submit_rejects_duplicate_name() {
 }
 
 #[test]
-#[cfg_attr(windows, ignore = "relies on Unix permissions to force a save failure")]
 fn test_snippet_form_submit_rollback_on_save_failure() {
     // Skip under root: see test_snippet_picker_d_rollback_on_save_failure
     // for the explanation.
@@ -3937,7 +3940,12 @@ fn test_snippet_form_submit_rollback_on_save_failure() {
 
     let mut app = make_snippet_app();
     // Force save failure
-    app.snippets.store_mut().path_override = Some(PathBuf::from("/nonexistent/dir/snippets"));
+    // Unwritable on every OS: a "directory" that is really a regular file.
+    // (`/nonexistent/...` is creatable on Windows, as C:\nonexistent\....)
+    let blocker = tempfile::tempdir().expect("tempdir");
+    std::fs::write(blocker.path().join("file"), b"").expect("write file");
+    app.snippets.store_mut().path_override =
+        Some(blocker.path().join("file").join("dir").join("snippets"));
     *app.snippets.form_mut() = crate::app::SnippetForm::new();
     app.snippets.form_mut().name = "new-cmd".to_string();
     app.snippets.form_mut().command = "whoami".to_string();
@@ -3959,7 +3967,6 @@ fn test_snippet_form_submit_rollback_on_save_failure() {
 }
 
 #[test]
-#[cfg_attr(windows, ignore = "relies on Unix permissions to force a save failure")]
 fn test_snippet_form_edit_rename_rollback_on_save_failure() {
     // Skip under root: see test_snippet_picker_d_rollback_on_save_failure
     // for the explanation.
@@ -3980,7 +3987,12 @@ fn test_snippet_form_edit_rename_rollback_on_save_failure() {
         .store_mut()
         .set_targets("check-disk", vec!["h1".to_string(), "h2".to_string()]);
     // Force save failure
-    app.snippets.store_mut().path_override = Some(PathBuf::from("/nonexistent/dir/snippets"));
+    // Unwritable on every OS: a "directory" that is really a regular file.
+    // (`/nonexistent/...` is creatable on Windows, as C:\nonexistent\....)
+    let blocker = tempfile::tempdir().expect("tempdir");
+    std::fs::write(blocker.path().join("file"), b"").expect("write file");
+    app.snippets.store_mut().path_override =
+        Some(blocker.path().join("file").join("dir").join("snippets"));
     *app.snippets.form_mut() =
         crate::app::SnippetForm::from_snippet(&app.snippets.store().snippets[0].clone());
     app.snippets.form_mut().name = "renamed".to_string();
@@ -7208,9 +7220,13 @@ fn refresh_selected_if_stale_marks_checking_for_stale_host() {
     app.ping.set_auto_ping(true);
     app.ping
         .insert_status("web1".to_string(), crate::app::PingStatus::Unreachable);
-    let stale = std::time::Instant::now()
-        - crate::app::ping::STALE_REFRESH_AFTER
-        - std::time::Duration::from_secs(1);
+    // Windows' monotonic clock starts at boot: on a freshly booted machine
+    // this far back may not exist yet, so there is nothing to test.
+    let Some(stale) = std::time::Instant::now()
+        .checked_sub(crate::app::ping::STALE_REFRESH_AFTER + std::time::Duration::from_secs(1))
+    else {
+        return;
+    };
     app.ping.record_check("web1".to_string(), stale);
     let (tx, _rx) = std::sync::mpsc::channel();
     super::ping::refresh_selected_if_stale(&mut app, &tx);
@@ -7339,9 +7355,11 @@ fn stage_two_hosts_first_stale() -> App {
         "Host web1\n  HostName 127.0.0.1\n  Port 59999\nHost web2\n  HostName 127.0.0.1\n  Port 59999\n",
     );
     app.ping.set_auto_ping(true);
+    // Windows' monotonic clock starts at boot, so this needs a machine that
+    // has been up for over two minutes (always true once tests have built).
     let stale = std::time::Instant::now()
-        - crate::app::ping::STALE_REFRESH_AFTER
-        - std::time::Duration::from_secs(1);
+        .checked_sub(crate::app::ping::STALE_REFRESH_AFTER + std::time::Duration::from_secs(1))
+        .expect("machine booted more than STALE_REFRESH_AFTER ago");
     app.ping.insert_status(
         "web1".to_string(),
         crate::app::PingStatus::Reachable { rtt_ms: 5 },
@@ -7444,7 +7462,12 @@ fn tick_does_not_clear_ping_status_after_sixty_seconds() {
         "web1".to_string(),
         crate::app::PingStatus::Reachable { rtt_ms: 10 },
     );
-    let old = std::time::Instant::now() - std::time::Duration::from_secs(120);
+    // Windows' monotonic clock starts at boot: on a freshly booted machine
+    // this far back may not exist yet, so there is nothing to test.
+    let Some(old) = std::time::Instant::now().checked_sub(std::time::Duration::from_secs(120))
+    else {
+        return;
+    };
     app.ping.record_check("web1".to_string(), old);
     app.ping.set_checked_at(Some(old));
     let mut anim = crate::animation::AnimationState::default();

@@ -280,7 +280,12 @@ mod tests {
         state
             .status
             .insert("web1".into(), PingStatus::Reachable { rtt_ms: 5 });
-        let past = Instant::now() - STALE_REFRESH_AFTER - Duration::from_secs(1);
+        // Windows' monotonic clock starts at boot: on a freshly booted machine
+        // this far back may not exist yet, so there is nothing to test.
+        let Some(past) = Instant::now().checked_sub(STALE_REFRESH_AFTER + Duration::from_secs(1))
+        else {
+            return;
+        };
         state.last_checked.insert("web1".into(), past);
         assert!(state.is_stale("web1"));
     }
