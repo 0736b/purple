@@ -141,6 +141,7 @@ fn mcp_e2e_full_session() {
 // this test covers the full subprocess chain that mirrors how the .mcpb
 // bundle launches in production.
 #[test]
+#[cfg_attr(windows, ignore = "assumes Unix paths and HOME layout")]
 fn mcp_subprocess_expands_literal_home_in_args() {
     use tempfile::TempDir;
 

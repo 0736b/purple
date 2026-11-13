@@ -480,6 +480,10 @@ pub(crate) fn other_local_shells() -> Vec<&'static str> {
 }
 
 fn existing(paths: &[&'static str]) -> Vec<&'static str> {
+    // These are Unix shell paths; on Windows there are none to run.
+    if cfg!(not(unix)) {
+        return Vec::new();
+    }
     paths
         .iter()
         .copied()
@@ -499,13 +503,18 @@ fn run_wrapped_locally(shell: &str, command: &str, stdin: &str) -> std::process:
 /// nothing from the developer's own dotfiles or the repo leaks in or out.
 pub(crate) fn run_in_sandbox(shell: &str, script: &str, stdin: &str) -> std::process::Output {
     use std::io::Write;
+    #[cfg(unix)]
     use std::os::unix::process::CommandExt;
     let home = tempfile::tempdir().expect("create tempdir");
     // Keeps Ubuntu's /etc/bash.bashrc from printing its sudo hint to stdout.
     std::fs::write(home.path().join(".sudo_as_admin_successful"), "").expect("write marker");
     let name = shell.rsplit('/').next().unwrap_or(shell);
-    let mut child = std::process::Command::new(shell)
-        .arg0(name)
+    let mut cmd = std::process::Command::new(shell);
+    #[cfg(unix)]
+    cmd.arg0(name);
+    #[cfg(not(unix))]
+    let _ = name;
+    let mut child = cmd
         .arg("-c")
         .arg(script)
         .env("SHELL", shell)
@@ -534,6 +543,7 @@ pub(crate) fn run_in_sandbox(shell: &str, script: &str, stdin: &str) -> std::pro
 const PIPE_OVERFLOW_BYTES: usize = 1 << 20;
 
 #[test]
+#[cfg_attr(windows, ignore = "spawns Unix tools (sh, true, sleep)")]
 fn test_sandbox_tolerates_a_shell_that_exits_without_reading_stdin() {
     let stdin = "x".repeat(PIPE_OVERFLOW_BYTES);
     let out = run_in_sandbox("/bin/sh", "exit 3", &stdin);

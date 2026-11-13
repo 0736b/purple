@@ -3228,6 +3228,7 @@ fn from_entry_populates_vault_ssh() {
 // --- add_host_from_form with vault_ssh (bypassing write) ---
 
 #[test]
+#[cfg_attr(windows, ignore = "assumes Unix paths and HOME layout")]
 fn test_add_host_from_form_sets_vault_ssh_and_certificate_file() {
     let dir = std::env::temp_dir().join("purple_test_add_vault_ssh");
     let _ = std::fs::create_dir_all(&dir);
@@ -3353,6 +3354,7 @@ fn edit_host_rollback_after_failed_save_keeps_inherited_values_out() {
 }
 
 #[test]
+#[cfg_attr(windows, ignore = "assumes Unix paths and HOME layout")]
 fn test_edit_host_sets_vault_ssh_and_certificate_file() {
     let content = "Host myserver\n  HostName 10.0.0.1\n";
     let dir = std::env::temp_dir().join("purple_test_edit_vault_ssh_set");
@@ -7319,9 +7321,13 @@ fn tick_toast_error_does_not_auto_expire() {
     let mut app = make_app("");
     app.notify_error("failed");
     assert!(app.status_center.toast.is_some());
-    // Backdate far into the past.
+    // Backdate far into the past. Windows' monotonic clock starts at boot,
+    // so an hour back may not exist on a freshly booted machine.
+    let Some(backdated) = Instant::now().checked_sub(Duration::from_secs(3600)) else {
+        return;
+    };
     if let Some(toast) = app.status_center.toast.as_mut() {
-        toast.created_at = Instant::now() - Duration::from_secs(3600);
+        toast.created_at = backdated;
     }
     app.tick_toast();
     assert!(
@@ -10012,6 +10018,7 @@ fn pop_help_overlay_is_noop_when_not_in_help() {
 }
 
 #[test]
+#[cfg_attr(windows, ignore = "assumes Unix paths and HOME layout")]
 fn config_path_display_collapses_home_and_keeps_demo_default() {
     let env = Arc::new(crate::runtime::env::Env::sandboxed());
     let home = env.paths().expect("sandbox paths").home().to_path_buf();

@@ -406,9 +406,12 @@ mod tests {
     fn tick_toast_does_not_expire_sticky_toast() {
         let mut s = StatusCenter::default();
         s.push_toast(msg("stay", MessageClass::Error, true));
-        let expired_at = std::time::Instant::now()
-            .checked_sub(std::time::Duration::from_secs(3600))
-            .expect("instant subtraction");
+        // Windows' monotonic clock starts at boot: an hour back may not exist.
+        let Some(expired_at) =
+            std::time::Instant::now().checked_sub(std::time::Duration::from_secs(3600))
+        else {
+            return;
+        };
         if let Some(active) = s.toast.as_mut() {
             active.created_at = expired_at;
         }

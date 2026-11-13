@@ -668,7 +668,7 @@ const FAKE_DOCKER: &str = concat!(
 /// argv[0]) inside an empty HOME, with PATH holding only a directory that
 /// carries the fake `docker` when asked for.
 fn run_list_command(shell: &str, command: &str, with_docker: bool) -> std::process::Output {
-    use std::os::unix::fs::PermissionsExt;
+    #[cfg(unix)]
     use std::os::unix::process::CommandExt;
     let home = tempfile::tempdir().expect("create tempdir");
     let bin = home.path().join("bin");
@@ -676,13 +676,20 @@ fn run_list_command(shell: &str, command: &str, with_docker: bool) -> std::proce
     if with_docker {
         let docker = bin.join("docker");
         std::fs::write(&docker, FAKE_DOCKER).expect("write fake docker");
-        std::fs::set_permissions(&docker, std::fs::Permissions::from_mode(0o755))
-            .expect("chmod fake docker");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&docker, std::fs::Permissions::from_mode(0o755))
+                .expect("chmod fake docker");
+        }
     }
     let name = shell.rsplit('/').next().unwrap_or(shell);
-    std::process::Command::new(shell)
-        .arg0(name)
-        .arg("-c")
+    let mut cmd = std::process::Command::new(shell);
+    #[cfg(unix)]
+    cmd.arg0(name);
+    #[cfg(not(unix))]
+    let _ = name;
+    cmd.arg("-c")
         .arg(command)
         .env("PATH", &bin)
         .env("SHELL", shell)

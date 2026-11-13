@@ -653,6 +653,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(windows, ignore = "needs a POSIX shell or OpenSSH client")]
     fn connect_fails_with_nonexistent_config() {
         // connect() should return an error when the config file doesn't exist and
         let result = connect(
@@ -670,6 +671,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(windows, ignore = "needs a POSIX shell or OpenSSH client")]
     fn connect_with_tunnel_flag_does_not_panic() {
         // Verify has_active_tunnel=true adds the ClearAllForwardings arg without panic.
         let result = connect(
@@ -685,6 +687,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(windows, ignore = "needs a POSIX shell or OpenSSH client")]
     fn connect_runs_the_configured_launcher() {
         // A launcher that echoes its argv proves purple's own arguments are
         // appended after the configured words and the exit code flows back.
@@ -788,6 +791,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(windows, ignore = "needs a POSIX shell or OpenSSH client")]
     fn connect_captures_stderr() {
         // SSH should produce some stderr output when failing.
         let result = connect(
@@ -1105,6 +1109,7 @@ Host key verification failed.
     static TMUX_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
     #[test]
+    #[cfg_attr(windows, ignore = "tmux detection is Unix-only")]
     fn is_in_tmux_returns_true_when_set() {
         let env = crate::runtime::env::Env::for_test("/tmp/x")
             .with_var("TMUX", "/tmp/tmux-1000/default,12345,0");

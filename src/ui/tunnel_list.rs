@@ -123,6 +123,7 @@ mod tests {
 
     // The per-host delete confirm names the config file it rewrites.
     #[test]
+    #[cfg_attr(windows, ignore = "assumes Unix paths and HOME layout")]
     fn delete_confirm_names_the_config_file() {
         let mut app = crate::ui::app_with_own_config("Host fwd\n  HostName 10.0.0.1\n");
         app.tunnels.request_delete(0);

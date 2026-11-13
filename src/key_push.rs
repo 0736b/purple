@@ -726,6 +726,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(windows, ignore = "spawns Unix tools (sh, true, sleep)")]
     fn inflight_terminate_kills_a_running_child() {
         // A `sleep` in its own process group stands in for a stuck ssh.
         let mut cmd = Command::new("sleep");

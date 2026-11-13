@@ -600,6 +600,7 @@ fn openssh_private_key_cipher_decides_encryption() {
 }
 
 #[test]
+#[cfg_attr(windows, ignore = "needs a POSIX shell or OpenSSH client")]
 fn openssh_private_key_bad_framing_is_left_to_ssh_keygen() {
     let dir = tempfile::tempdir().unwrap();
     let d = dir.path();

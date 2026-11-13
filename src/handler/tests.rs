@@ -3634,6 +3634,7 @@ fn test_snippet_picker_d_last_item_selects_none() {
 }
 
 #[test]
+#[cfg_attr(windows, ignore = "relies on Unix permissions to force a save failure")]
 fn test_snippet_picker_d_rollback_on_save_failure() {
     // Skip under root (e.g. inside CI Docker containers): root can
     // mkdir -p any path including /nonexistent/dir, so the save would
@@ -3920,6 +3921,7 @@ fn test_snippet_form_submit_rejects_duplicate_name() {
 }
 
 #[test]
+#[cfg_attr(windows, ignore = "relies on Unix permissions to force a save failure")]
 fn test_snippet_form_submit_rollback_on_save_failure() {
     // Skip under root: see test_snippet_picker_d_rollback_on_save_failure
     // for the explanation.
@@ -3957,6 +3959,7 @@ fn test_snippet_form_submit_rollback_on_save_failure() {
 }
 
 #[test]
+#[cfg_attr(windows, ignore = "relies on Unix permissions to force a save failure")]
 fn test_snippet_form_edit_rename_rollback_on_save_failure() {
     // Skip under root: see test_snippet_picker_d_rollback_on_save_failure
     // for the explanation.

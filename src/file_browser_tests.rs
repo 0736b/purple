@@ -423,6 +423,7 @@ fn run_listing_locally(path: &Path) -> std::process::Output {
 }
 
 #[test]
+#[cfg(unix)] // needs symlink creation
 fn the_local_ls_lists_odd_names_and_skips_a_dangling_symlink() {
     let dir = tempfile::tempdir().expect("tempdir");
     let base = dir.path();
@@ -451,6 +452,7 @@ fn the_local_ls_lists_odd_names_and_skips_a_dangling_symlink() {
 }
 
 #[test]
+#[cfg(unix)] // needs symlink creation
 fn the_local_ls_lists_a_directory_of_broken_symlinks_as_empty() {
     let dir = tempfile::tempdir().expect("tempdir");
     let base = dir.path();
@@ -468,6 +470,7 @@ fn the_local_ls_lists_a_directory_of_broken_symlinks_as_empty() {
 }
 
 #[test]
+#[cfg(unix)] // needs symlink creation
 fn the_local_ls_reports_a_dangling_link_to_a_folder_as_an_error() {
     let dir = tempfile::tempdir().expect("tempdir");
     let link = dir.path().join("current");
@@ -483,6 +486,7 @@ fn the_local_ls_reports_a_dangling_link_to_a_folder_as_an_error() {
 }
 
 #[test]
+#[cfg_attr(windows, ignore = "spawns Unix tools (sh, true, sleep)")]
 fn the_local_ls_reports_a_missing_directory_as_an_error() {
     let dir = tempfile::tempdir().expect("tempdir");
     let out = run_listing_locally(&dir.path().join("missing"));
@@ -527,6 +531,7 @@ fn test_format_size() {
 // =========================================================================
 
 #[test]
+#[cfg_attr(windows, ignore = "assumes Unix paths and HOME layout")]
 fn test_build_scp_args_upload() {
     let args = build_scp_args(
         "myhost",
@@ -614,6 +619,7 @@ fn a_download_source_is_escaped_whatever_the_protocol() {
 }
 
 #[test]
+#[cfg_attr(windows, ignore = "assumes Unix paths and HOME layout")]
 fn an_upload_target_is_escaped_on_the_legacy_protocol_only() {
     let local = "/local dir/my file[1].txt";
     assert_eq!(
@@ -634,6 +640,7 @@ fn an_unknown_protocol_refuses_an_upload_target_that_needs_escaping() {
 }
 
 #[test]
+#[cfg_attr(windows, ignore = "assumes Unix paths and HOME layout")]
 fn an_unknown_protocol_allows_a_plain_upload_target() {
     assert_eq!(
         upload_args(ScpMode::Unknown, "/remote/plain-dir_1.0/").unwrap(),

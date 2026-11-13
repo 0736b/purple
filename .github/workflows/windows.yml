@@ -1,0 +1,103 @@
+name: Windows
+
+on:
+  push:
+    branches: [master]
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  TARGET: x86_64-pc-windows-msvc
+
+jobs:
+  test:
+    name: Test x86_64-pc-windows-msvc
+    runs-on: windows-latest
+    steps:
+      # Keep LF endings: golden files and SSH config fixtures are compared
+      # byte for byte, and Git for Windows would otherwise check out CRLF.
+      - name: Disable CRLF conversion
+        run: git config --global core.autocrlf false
+
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.95"
+          targets: ${{ env.TARGET }}
+
+      - uses: Swatinem/rust-cache@v2
+
+      # Tests that assume Unix paths or tools are marked
+      # #[cfg_attr(windows, ignore = "...")]; list them with -- --ignored.
+      - name: Run tests
+        run: cargo test --locked --no-fail-fast --target ${{ env.TARGET }}
+
+  build:
+    name: Build x86_64-pc-windows-msvc
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - name: Disable CRLF conversion
+        run: git config --global core.autocrlf false
+
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.95"
+          targets: ${{ env.TARGET }}
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build release binary
+        run: cargo build --locked --release --target ${{ env.TARGET }}
+
+      - name: Smoke test
+        shell: bash
+        run: ./target/${TARGET}/release/purple.exe --version
+
+      - name: Package binary
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -like 'refs/tags/v*') {
+            $version = $env:GITHUB_REF_NAME.TrimStart('v')
+          } else {
+            $version = (git rev-parse --short HEAD).Trim()
+          }
+          $archive = "purple-$version-$env:TARGET.zip"
+          Compress-Archive -Path "target/$env:TARGET/release/purple.exe", LICENSE, README.md -DestinationPath $archive
+          $hash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLower()
+          "$hash  $archive" | Out-File -Encoding ascii -NoNewline "$archive.sha256"
+          "ARCHIVE=$archive" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: purple-${{ env.TARGET }}
+          path: |
+            ${{ env.ARCHIVE }}
+            ${{ env.ARCHIVE }}.sha256
+
+      - name: Attach to GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v3
+        with:
+          files: |
+            ${{ env.ARCHIVE }}
+            ${{ env.ARCHIVE }}.sha256

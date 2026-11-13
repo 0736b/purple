@@ -65,6 +65,7 @@ fn other_yes_no_and_passphrase_prompts_are_refused_quietly() {
 }
 
 #[test]
+#[cfg_attr(windows, ignore = "needs a POSIX shell or OpenSSH client")]
 fn password_prompts_still_read_the_source() {
     let dir = tempfile::tempdir().unwrap();
     let output = run_askpass(dir.path(), "root@example.test's password: ", |_| {});

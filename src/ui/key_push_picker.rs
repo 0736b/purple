@@ -196,6 +196,7 @@ mod tests {
 
     // With no hosts the picker names the config file it reads.
     #[test]
+    #[cfg_attr(windows, ignore = "assumes Unix paths and HOME layout")]
     fn empty_picker_names_the_config_file() {
         let mut app = crate::ui::app_with_own_config("");
         let text = crate::ui::render_to_text(120, 40, |frame| render(frame, &mut app, 0));

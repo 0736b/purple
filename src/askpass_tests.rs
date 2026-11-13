@@ -854,6 +854,7 @@ fn marker_path_special_chars_in_alias() {
 }
 
 #[test]
+#[cfg_attr(windows, ignore = "assumes Unix paths and HOME layout")]
 fn marker_path_is_in_the_state_dir() {
     let legacy = crate::runtime::env::Paths::new("/home/u");
     let path = marker_path(Some(&legacy), "test").unwrap();
@@ -1572,6 +1573,7 @@ fn keychain_has_password_returns_bool() {
 // Env carries the real PATH (Env::from_process) to resolve `sh` and `echo`.
 
 #[test]
+#[cfg_attr(windows, ignore = "needs a POSIX shell or OpenSSH client")]
 fn retrieve_from_command_escapes_alias_metacharacters() {
     let env = crate::runtime::env::Env::from_process();
     let result = retrieve_from_command(&env, "echo %a", "$(whoami)", "host.com");
@@ -1581,6 +1583,7 @@ fn retrieve_from_command_escapes_alias_metacharacters() {
 }
 
 #[test]
+#[cfg_attr(windows, ignore = "needs a POSIX shell or OpenSSH client")]
 fn retrieve_from_command_escapes_hostname_metacharacters() {
     let env = crate::runtime::env::Env::from_process();
     let result = retrieve_from_command(&env, "echo %h", "myalias", "$(id)");
@@ -1590,6 +1593,7 @@ fn retrieve_from_command_escapes_hostname_metacharacters() {
 }
 
 #[test]
+#[cfg_attr(windows, ignore = "needs a POSIX shell or OpenSSH client")]
 fn retrieve_from_command_escapes_backtick_injection() {
     let env = crate::runtime::env::Env::from_process();
     let result = retrieve_from_command(&env, "echo %a", "`uname`", "host");
@@ -1599,6 +1603,7 @@ fn retrieve_from_command_escapes_backtick_injection() {
 }
 
 #[test]
+#[cfg_attr(windows, ignore = "needs a POSIX shell or OpenSSH client")]
 fn retrieve_from_command_escapes_semicolon() {
     let env = crate::runtime::env::Env::from_process();
     let result = retrieve_from_command(&env, "echo %a", "foo;id", "host");
@@ -1608,6 +1613,7 @@ fn retrieve_from_command_escapes_semicolon() {
 }
 
 #[test]
+#[cfg_attr(windows, ignore = "needs a POSIX shell or OpenSSH client")]
 fn retrieve_from_command_normal_values_unchanged() {
     let env = crate::runtime::env::Env::from_process();
     let result = retrieve_from_command(&env, "echo %a %h", "myserver", "10.0.0.1");

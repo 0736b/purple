@@ -1290,6 +1290,7 @@ Host do-db
 
 // The empty Hosts tab names the config file purple reads.
 #[test]
+#[cfg_attr(windows, ignore = "assumes Unix paths and HOME layout")]
 fn empty_hosts_tab_names_the_config_file() {
     let mut app = crate::ui::app_with_own_config("");
     let mut anim = crate::animation::AnimationState::default();

@@ -10,7 +10,6 @@ use serde::de::DeserializeOwned;
 /// The lock is released when the `FileLock` is dropped.
 pub struct FileLock {
     lock_path: PathBuf,
-    #[cfg(unix)]
     _file: fs::File,
 }
 
@@ -51,20 +50,19 @@ impl FileLock {
 
         #[cfg(not(unix))]
         {
-            // On non-Unix, use a simple lock file (best-effort)
+            // On non-Unix (Windows), hold an exclusive OS lock on the file
+            // via std's `File::lock` (LockFileEx). Blocks until acquired and
+            // is released when the handle closes on drop.
             let file = fs::OpenOptions::new()
+                .read(true)
                 .write(true)
-                .create_new(true)
-                .open(&lock_path)
-                .or_else(|_| {
-                    // If it already exists, wait briefly and retry
-                    std::thread::sleep(std::time::Duration::from_millis(100));
-                    fs::remove_file(&lock_path).ok();
-                    fs::OpenOptions::new()
-                        .write(true)
-                        .create_new(true)
-                        .open(&lock_path)
-                })?;
+                .create(true)
+                .truncate(false)
+                .open(&lock_path)?;
+            // `File::lock` is stable since 1.89, above the crate's 1.88 MSRV;
+            // only Windows builds take this path and CI builds them on 1.95.
+            #[allow(clippy::incompatible_msrv)]
+            file.lock()?;
             Ok(FileLock {
                 lock_path,
                 _file: file,
@@ -219,22 +217,22 @@ pub fn atomic_write(path: &Path, content: &[u8]) -> io::Result<()> {
 
     #[cfg(not(unix))]
     {
-        if let Err(e) = fs::write(&tmp_path, content) {
+        use std::io::Write;
+        // Write and sync through one writable handle. Windows'
+        // FlushFileBuffers (behind `sync_all`) needs write access, so a
+        // read-only reopen fails with "Access denied".
+        let written = fs::OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(&tmp_path)
+            .and_then(|mut file| {
+                file.write_all(content)?;
+                file.sync_all()
+            });
+        if let Err(e) = written {
             let _ = fs::remove_file(&tmp_path);
             return Err(e);
-        }
-        // sync_all via reopen since fs::write doesn't return a File handle
-        match fs::File::open(&tmp_path) {
-            Ok(f) => {
-                if let Err(e) = f.sync_all() {
-                    let _ = fs::remove_file(&tmp_path);
-                    return Err(e);
-                }
-            }
-            Err(e) => {
-                let _ = fs::remove_file(&tmp_path);
-                return Err(e);
-            }
         }
     }
 

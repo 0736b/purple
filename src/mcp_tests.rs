@@ -1582,6 +1582,7 @@ fn run_command_timeout_clamps_zero_to_one() {
 // ── default_audit_log_path branches ──────────────────────────────────
 
 #[test]
+#[cfg_attr(windows, ignore = "assumes Unix paths and HOME layout")]
 fn default_audit_log_path_lives_in_the_state_directory() {
     let legacy = crate::runtime::env::Paths::new("/var/test/home/eric");
     assert_eq!(

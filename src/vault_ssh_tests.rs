@@ -682,6 +682,7 @@ fn resolve_cert_path_uses_certificate_file_when_set() {
 }
 
 #[test]
+#[cfg_attr(windows, ignore = "assumes Unix paths and HOME layout")]
 fn resolve_cert_path_falls_back_to_default() {
     let paths = crate::runtime::env::Paths::new("/home/u");
     let path = resolve_cert_path(Some(&paths), "myhost", "").unwrap();
@@ -915,6 +916,7 @@ fn resolve_proxy_chain_no_proxy_returns_target_only() {
 /// ProxyJump set on the host's own block must surface in the chain with the
 /// proxy listed before the target so callers can sign in dependency order.
 #[test]
+#[cfg_attr(windows, ignore = "needs a POSIX shell or OpenSSH client")]
 fn resolve_proxy_chain_explicit_proxy_jump() {
     let dir = tempfile::tempdir().unwrap();
     let config_path = dir.path().join("config");
@@ -932,6 +934,7 @@ fn resolve_proxy_chain_explicit_proxy_jump() {
 /// original bug) must surface too. Without `ssh -G` the proxy hop would be
 /// invisible because the target's own host block has no ProxyJump line.
 #[test]
+#[cfg_attr(windows, ignore = "needs a POSIX shell or OpenSSH client")]
 fn resolve_proxy_chain_wildcard_inherited_proxy() {
     let dir = tempfile::tempdir().unwrap();
     let config_path = dir.path().join("config");
@@ -951,6 +954,7 @@ fn resolve_proxy_chain_wildcard_inherited_proxy() {
 
 /// A ProxyJump cycle (a→b→a) must terminate. Visited set guarantees this.
 #[test]
+#[cfg_attr(windows, ignore = "needs a POSIX shell or OpenSSH client")]
 fn resolve_proxy_chain_breaks_cycles() {
     let dir = tempfile::tempdir().unwrap();
     let config_path = dir.path().join("config");
@@ -973,6 +977,7 @@ fn resolve_proxy_chain_breaks_cycles() {
 /// they accept `[mid, bastion, target]` which would sign mid before its
 /// own dependency bastion.
 #[test]
+#[cfg_attr(windows, ignore = "needs a POSIX shell or OpenSSH client")]
 fn resolve_proxy_chain_multi_hop() {
     let dir = tempfile::tempdir().unwrap();
     let config_path = dir.path().join("config");
@@ -1001,6 +1006,7 @@ fn resolve_proxy_chain_multi_hop() {
 /// catches a regression where signing skips the target after the proxies
 /// were processed.
 #[test]
+#[cfg_attr(windows, ignore = "needs a POSIX shell or OpenSSH client")]
 fn resolve_proxy_chain_comma_separated_proxies() {
     let dir = tempfile::tempdir().unwrap();
     let config_path = dir.path().join("config");
@@ -1690,6 +1696,7 @@ fn cert_file_in_purple_dir_rejects_other_paths() {
 }
 
 #[test]
+#[cfg_attr(windows, ignore = "assumes Unix paths and HOME layout")]
 fn cert_file_in_purple_dir_matches_the_resolved_data_dir() {
     // With XDG_DATA_HOME set the certs live under `<data>/purple/certs`, so
     // a CertificateFile pointing there (absolute or tilde-relative) is

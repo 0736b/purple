@@ -408,6 +408,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(windows, ignore = "golden output differs on Windows")]
     fn generate_hero_writes_one_looping_animated_svg() {
         let _lock = crate::demo_flag::GLOBAL_TEST_LOCK
             .lock()

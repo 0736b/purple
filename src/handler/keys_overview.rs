@@ -399,6 +399,7 @@ mod tests {
     use std::sync::atomic::AtomicBool;
 
     #[test]
+    #[cfg_attr(windows, ignore = "assumes Unix paths and HOME layout")]
     fn expand_tilde_replaces_prefix() {
         let paths = crate::runtime::env::Paths::new("/home/u");
         let result = expand_tilde(Some(&paths), "~/.ssh/id_ed25519.pub");

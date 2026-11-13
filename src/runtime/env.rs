@@ -663,6 +663,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(windows, ignore = "assumes Unix paths and HOME layout")]
     fn resolve_honors_each_xdg_variable_independently() {
         let vars = [("XDG_CONFIG_HOME", "/home/u/.config")];
         let p = Paths::resolve("/home/u", lookup(&vars));
@@ -683,6 +684,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(windows, ignore = "assumes Unix paths and HOME layout")]
     fn resolve_maps_every_file_to_its_category() {
         let vars = [
             ("XDG_CONFIG_HOME", "/x/cfg"),
@@ -788,6 +790,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(windows, ignore = "assumes Unix paths and HOME layout")]
     fn resolve_empty_purple_override_falls_through_to_xdg() {
         let vars = [
             ("PURPLE_DATA_DIR", ""),
@@ -807,6 +810,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(windows, ignore = "assumes Unix paths and HOME layout")]
     fn abbreviate_home_swaps_the_home_prefix_for_a_tilde() {
         let p = Paths::new("/home/u");
         assert_eq!(
@@ -915,6 +919,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(windows, ignore = "assumes Unix paths and HOME layout")]
     fn with_paths_replaces_the_layout() {
         let split = Paths::resolve("/tmp/x", lookup(&[("XDG_CACHE_HOME", "/tmp/c")]));
         let env = Env::for_test("/tmp/x").with_paths(split.clone());

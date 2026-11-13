@@ -1039,6 +1039,7 @@ mod tests {
 
     // The provider remove confirm names the config file the hosts stay in.
     #[test]
+    #[cfg_attr(windows, ignore = "assumes Unix paths and HOME layout")]
     fn remove_confirm_names_the_config_file() {
         let mut app = crate::ui::app_with_own_config("");
         app.providers

@@ -153,8 +153,13 @@ fn build_rows(app: &App) -> Vec<TunnelRow> {
             };
             let is_active = runtime.is_some() || demo_snapshot.is_some();
             let started_at = runtime.map(|a| a.started_at).or_else(|| {
-                demo_snapshot
-                    .map(|s| Instant::now() - std::time::Duration::from_secs(s.uptime_secs))
+                // checked_sub: Windows' monotonic clock starts at boot, so a
+                // long seeded uptime can predate it.
+                demo_snapshot.map(|s| {
+                    let now = Instant::now();
+                    now.checked_sub(std::time::Duration::from_secs(s.uptime_secs))
+                        .unwrap_or(now)
+                })
             });
 
             let (current_bps, throughput_ready) = if let Some(s) = demo_snapshot {
@@ -861,6 +866,7 @@ mod tests {
     /// dashboard is suppressed and the list keeps the full body area.
     // The tunnel delete confirm names the config file it rewrites.
     #[test]
+    #[cfg_attr(windows, ignore = "assumes Unix paths and HOME layout")]
     fn delete_confirm_names_the_config_file() {
         let mut app = crate::ui::app_with_own_config(
             "Host fwd\n  HostName 10.0.0.1\n  LocalForward 8080 localhost:80\n",

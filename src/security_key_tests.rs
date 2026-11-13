@@ -419,6 +419,7 @@ fn a_second_hand_out_of_one_key_waits_and_backs_off_when_the_key_refused() {
 }
 
 #[test]
+#[cfg_attr(windows, ignore = "spawns Unix tools (sh, true, sleep)")]
 fn a_hand_out_after_an_ssh_that_already_exited_barely_waits() {
     // The file browser looks up the home directory and then lists it, one
     // ssh after the other. The second one must not sit out the full gap.
@@ -437,6 +438,7 @@ fn a_hand_out_after_an_ssh_that_already_exited_barely_waits() {
 }
 
 #[test]
+#[cfg_attr(windows, ignore = "spawns Unix tools (sh, true, sleep)")]
 fn a_refusal_that_lands_just_after_its_ssh_exited_is_still_seen() {
     // The ssh got the PIN a while ago and exited only now; purple reads its
     // refusal line a moment later. The next hand-out must wait for that.
