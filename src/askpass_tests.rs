@@ -551,10 +551,11 @@ fn is_recent_marker_returns_false_for_nonexistent() {
 
 #[test]
 fn is_recent_marker_returns_true_for_fresh_file() {
-    let path = PathBuf::from("/tmp/purple_test_fresh_marker");
-    let _ = std::fs::write(&path, b"");
+    // A real temp dir: there is no /tmp on Windows.
+    let dir = tempfile::tempdir().expect("tempdir");
+    let path = dir.path().join("purple_test_fresh_marker");
+    std::fs::write(&path, b"").expect("write marker");
     assert!(is_recent_marker(&path));
-    let _ = std::fs::remove_file(&path);
 }
 
 #[test]

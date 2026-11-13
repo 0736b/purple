@@ -295,7 +295,9 @@ fn resolve_pubkey_from_identity_file() {
     let path = resolve_pubkey_path(Some(&paths), "~/.ssh/id_rsa").unwrap();
     let s = path.to_string_lossy();
     assert!(s.ends_with("id_rsa.pub"), "got: {}", s);
-    assert!(!s.contains('~'), "tilde should be expanded: {}", s);
+    // Only a leading `~` would mean "not expanded": Windows temp paths can
+    // contain 8.3 short names such as RUNNER~1.
+    assert!(!s.starts_with('~'), "tilde should be expanded: {}", s);
     assert_eq!(path, home.path().join(".ssh/id_rsa.pub"));
 }
 
@@ -678,7 +680,9 @@ fn resolve_cert_path_uses_certificate_file_when_set() {
     let path = resolve_cert_path(Some(&paths), "myhost", "~/.ssh/my-cert.pub").unwrap();
     let s = path.to_string_lossy();
     assert!(s.ends_with("my-cert.pub"), "got: {}", s);
-    assert!(!s.contains('~'), "tilde should be expanded: {}", s);
+    // Only a leading `~` would mean "not expanded": Windows temp paths can
+    // contain 8.3 short names such as RUNNER~1.
+    assert!(!s.starts_with('~'), "tilde should be expanded: {}", s);
 }
 
 #[test]

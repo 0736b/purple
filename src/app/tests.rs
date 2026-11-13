@@ -8849,8 +8849,13 @@ fn bulk_open_with_include_file_host_records_skipped() {
 #[test]
 fn bulk_apply_write_failure_rolls_back_and_keeps_undo_empty() {
     let mut app = bulk_app();
-    // Point the config to an unwritable path.
-    app.hosts_state.ssh_config.path = PathBuf::from("/dev/null/impossible/path.cfg");
+    // Point the config to an unwritable path: a "directory" that is really a
+    // regular file. (`/dev/null/...` would be writable on Windows, where it
+    // is just C:\dev\null\....)
+    let dir = tempfile::tempdir().expect("tempdir");
+    let not_a_dir = dir.path().join("file");
+    std::fs::write(&not_a_dir, b"").expect("write file");
+    app.hosts_state.ssh_config.path = not_a_dir.join("impossible").join("path.cfg");
     let idx = app
         .hosts_state
         .list
